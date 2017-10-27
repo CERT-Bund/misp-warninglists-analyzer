@@ -1,28 +1,55 @@
 #!/usr/bin/env python
 from cortexutils.analyzer import Analyzer
 from glob import glob
+from time import sleep, time
 import io
 import json
+import pygit2
+from shutil import rmtree
+from os.path import exists
+from os import remove
 
 class MISPWarninglistsAnalyzer(Analyzer):
     def __init__(self):
         Analyzer.__init__(self)
-        if self.get_param('config.enablepull', True):
+
+        # Wait for unlocking the repo
+        while exists('.lock'):
+            sleep(5)
+
+        self.delta = None
+
+        if self.get_param('config.enablepull', True) and self.__needpull():
             self.__pullrepo()
 
         self.data = self.getData()
         self.warninglists = self.__readwarninglists()
 
-    def __pullrepo(self):
-        # Todo: Implement git pulling instead of clonings, if repo is already cloned
-        import pygit2
-        from shutil import rmtree
-        from os.path import exists
+    def __needpull(self):
+        with io.open('last_update.json', 'r') as fh:
+            self.delta = abs(float(json.loads(fh.read()).get('last_update', 0)) - time())
+        if self.delta > self.get_param('config.alloweddelta', 86400):
+            return True
+        return False
 
+    def __pullrepo(self):
+        # Todo: Implement git pulling instead of cloning, if repo is already cloned
+
+        # lock
+        with io.open('.lock', 'w') as fh:
+            fh.write(str(time()))
+
+        # update
         if exists('misp-warninglists'):
             rmtree('misp-warninglists')
 
         pygit2.clone_repository('https://github.com/MISP/misp-warninglists', 'misp-warninglists')
+        with io.open('last_update.json', 'w') as fh:
+            fh.write(json.dumps({'last_update': time()}))
+        self.delta = 0
+
+        # rm lock
+        remove('.lock')
 
     def __readwarninglists(self):
         files = glob('misp-warninglists/lists/*/*.json')
@@ -62,11 +89,15 @@ class MISPWarninglistsAnalyzer(Analyzer):
                 results.append({
                     'name': list.get('name')
                 })
-        self.report(results)
+
+        self.report({
+            "results": results,
+            "last_update": self.delta}
+        )
 
     def summary(self, raw):
         taxonomies = []
-        if len(raw) > 0:
+        if len(raw['results']) > 0:
             taxonomies.append(self.build_taxonomy('suspicious', 'MISP', 'Warninglists', 'Potential fp'))
         else:
             taxonomies.append(self.build_taxonomy('info', 'MISP', 'Warninglists', 'No hits'))
@@ -74,6 +105,7 @@ class MISPWarninglistsAnalyzer(Analyzer):
         return {
             "taxonomies": taxonomies
         }
+
 
 if __name__ == '__main__':
     MISPWarninglistsAnalyzer().run()

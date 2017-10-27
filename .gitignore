@@ -5,3 +5,5 @@ lib
 lib64
 pip-selfcheck.json
 misp-warninglists
+test.py
+last_update.json
