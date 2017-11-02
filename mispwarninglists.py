@@ -1,13 +1,15 @@
 #!/usr/bin/env python
-from cortexutils.analyzer import Analyzer
-from glob import glob
-from time import sleep, time
 import io
 import json
 import pygit2
+
+from cortexutils.analyzer import Analyzer
+from glob import glob
+from time import sleep, time
 from shutil import rmtree
 from os.path import exists
 from os import remove
+
 
 class MISPWarninglistsAnalyzer(Analyzer):
     def __init__(self):
@@ -26,6 +28,8 @@ class MISPWarninglistsAnalyzer(Analyzer):
         self.warninglists = self.__readwarninglists()
 
     def __needpull(self):
+        if not exists('last_update.json'):
+            return True
         with io.open('last_update.json', 'r') as fh:
             self.delta = abs(float(json.loads(fh.read()).get('last_update', 0)) - time())
         if self.delta > self.get_param('config.alloweddelta', 86400):
