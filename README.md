@@ -3,12 +3,11 @@
 Checks observable against the MISP-warninglists.
 
 ## Requirements
-To be able to install pygit2, libgit2-devel (libgit2.h) has to be installed. See requirements.txt for python dependencies. Maybe, it is necessary to run `ldconfig` after installing pygit2 in order to use it properly.
+To be able to use the analyzer, [misp-warninglists repository](https://github.com/MISP/misp-warninglists) must be cloned.
 
 ## Configuration
 ```
 MISPWarningLists {
-  enablepull = true # allow cloning (later pulling) the repo (default: true)
-  alloweddelta = 86400 # time in seconds, when updating is necessary (default: 86400s (24h))
+  path = "/path/to/misp-warninlists"   # (Default: "misp-warninglists")
 }
 ```
