@@ -48,7 +48,7 @@ class MISPWarninglistsAnalyzer(Analyzer):
     def lastlocalcommit(self):
         try:
             with io.open('{}/.git/refs/heads/master'.format(self.path), 'r') as fh:
-                return fh.read()
+                return fh.read().strip('\n')
         except Exception as e:
             return 'Error: could not get local commit hash ({}).'.format(e)
 
