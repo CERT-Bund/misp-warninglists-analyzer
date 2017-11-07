@@ -12,7 +12,11 @@
             <ul ng-repeat="list in content.results">
                 <li>{{list.name}}</li>
             </ul>
-            <p>MISP-warninglists is currently at {{content.last_update}}.</p>
+            <div class="alert" ng-class="{alert-warning: content.last_local_commit != content.last_remote_commit,
+                    alert-success: content.last_local_commit == content.last_remote_commit}">
+                Local MISP\misp-warninglists commit hash: {{content.last_local_commit}}<br />
+                Remote MISP\misp-warninglists commit hash: {{content.last_remote_commit}}
+            </div>
         </dd>
       </dl>
     </div>

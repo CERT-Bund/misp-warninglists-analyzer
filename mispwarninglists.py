@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import io
 import json
+import requests
 
 from cortexutils.analyzer import Analyzer
 from cortexutils.extractor import Extractor
@@ -44,12 +45,21 @@ class MISPWarninglistsAnalyzer(Analyzer):
                 listcontent.append(obj)
         return listcontent
 
-    def lastcommit(self):
+    def lastlocalcommit(self):
         try:
             with io.open('{}/.git/refs/heads/master'.format(self.path), 'r') as fh:
                 return fh.read()
-        except NotADirectoryError as e:
-            return 'Could not get commit hash'
+        except Exception as e:
+            return 'Error: could not get local commit hash ({}).'.format(e)
+
+    @staticmethod
+    def lastremotecommit():
+        url = 'https://api.github.com/repos/misp/misp-warninglists/branches/master'
+        try:
+            result_dict = requests.get(url).json()
+            return result_dict['commit']['sha']
+        except Exception as e:
+            return 'Error: could not get remote commit hash ({}).'.format(e)
 
     def run(self):
         results = []
@@ -64,8 +74,9 @@ class MISPWarninglistsAnalyzer(Analyzer):
 
         self.report({
             "results": results,
-            "last_update": self.lastcommit()}
-        )
+            "last_local_commit": self.lastlocalcommit(),
+            "last_remote_commit": self.lastremotecommit()
+        })
 
     def summary(self, raw):
         taxonomies = []
