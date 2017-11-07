@@ -74,8 +74,7 @@ class MISPWarninglistsAnalyzer(Analyzer):
 
         self.report({
             "results": results,
-            "last_local_commit": self.lastlocalcommit(),
-            "last_remote_commit": self.lastremotecommit()
+            "is_uptodate": self.lastlocalcommit() == self.lastremotecommit()
         })
 
     def summary(self, raw):
